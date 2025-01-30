@@ -1,0 +1,21 @@
+{
+  "name": "ph-geolocation",
+  "version": "1.0.0",
+  "description": "The PH Geolocation is an API that provides geolocation data for locations within the Philippines. This API allows users to retrieve information about regions, provinces, cities, municipalities, and barangays. The data is sourced from the Philippine Standard Geographic Code (PSGC) and has been structured in JSON format for ease of use.",
+  "main": "PH_GEO.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "Philippines",
+    "Location",
+    "Region",
+    "Provinces",
+    "City",
+    "Baranggay",
+    "API",
+    "PH"
+  ],
+  "author": "Zaenalos",
+  "license": "ISC"
+}
