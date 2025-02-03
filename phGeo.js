@@ -77,7 +77,7 @@ class PHGeolocation {
    */
   getRegions() {
     this.ensureDataLoaded();
-    return this.data.regions;
+    return Object.keys(this.data.regions);
   }
 
   /**
@@ -91,7 +91,7 @@ class PHGeolocation {
     if (!this.data.regions[region]) {
       throw new Error(`PH-Geo: error - Region "${region}" not found`);
     }
-    return this.data.regions[region].provinces || {};
+    return Object.keys(this.data.regions[region].provinces);
   }
 
   /**
@@ -111,7 +111,7 @@ class PHGeolocation {
         `PH-Geo: error - Province "${province}" not found in region "${region}"`
       );
     }
-    return this.data.regions[region].provinces[province].cities || {};
+    return Object.keys(this.data.regions[region].provinces[province].cities);
   }
 
   /**
@@ -137,9 +137,7 @@ class PHGeolocation {
         `PH-Geo: error - City "${city}" not found in province "${province}"`
       );
     }
-    return (
-      this.data.regions[region].provinces[province].cities[city].barangays || []
-    );
+    return this.data.regions[region].provinces[province].cities[city].barangays;
   }
 
   /**
@@ -155,4 +153,4 @@ class PHGeolocation {
   }
 }
 
-const PHGeo = new PHGeolocation(); // Attach to window after initialization
+const PHGeo = new PHGeolocation();
