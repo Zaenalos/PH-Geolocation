@@ -1,156 +1,166 @@
 /**
  * PH-Geolocation API
  *
- * A browser-compatible API for fetching location data in the Philippines.
+ * A browser-compatible API for fetching Philippine geographic data.
  *
  * @module PH-Geolocation
  */
+
 class PHGeolocation {
   constructor() {
     this.jsonUrl =
       "https://raw.githubusercontent.com/Zaenalos/PH-Geolocation/refs/heads/main/PH_GEO.json";
     this.data = null;
-    this.isLoading = false;
     this.isInitialized = false;
-    this.initPromise = null;
-
-    // Automatically initialize with error handling
-    this.initPromise = this.initialize().catch((error) => {
-      console.error("PH-Geo: error - Initialization failed:", error);
+    // Cached initialization promise to prevent duplicate fetches
+    this._initPromise = this.initialize().catch((error) => {
+      console.error("PH-Geo: Initialization failed:", error);
     });
   }
 
   /**
-   * Loads the geographic data from the JSON file.
-   * @throws {Error} If the data fails to load or parse.
+   * Loads geographic data from the JSON file.
+   * @returns {Promise<void>}
+   * @throws {Error} If the fetch fails or the data cannot be parsed.
    */
   async loadGeo() {
-    if (!this.data && !this.isLoading) {
-      this.isLoading = true;
-      try {
-        console.log("PH-Geo: Loading geographic data...");
-        const response = await fetch(this.jsonUrl);
-
-        if (!response.ok) {
-          throw new Error(
-            `PH-Geo: error - Failed to fetch data (${response.status} ${response.statusText})`
-          );
-        }
-
-        const text = await response.text();
-        this.data = JSON.parse(text);
-        console.log("PH-Geo: Geographic data loaded successfully");
-      } catch (error) {
-        console.error("PH-Geo: error -", error.message);
-        throw error; // Re-throw for handling in initialize()
-      } finally {
-        this.isLoading = false;
+    if (this.data) {
+      return;
+    }
+    try {
+      console.log("PH-Geo: Loading geographic data...");
+      const response = await fetch(this.jsonUrl);
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch data (${response.status} ${response.statusText})`
+        );
       }
+      const text = await response.text();
+      this.data = JSON.parse(text);
+      console.log("PH-Geo: Geographic data loaded successfully");
+    } catch (error) {
+      console.error("PH-Geo: Error:", error.message);
+      throw error;
     }
   }
 
   /**
    * Initializes the API by loading the geographic data.
-   * @returns {Promise} A promise that resolves when the data is loaded.
+   * @returns {Promise<void>}
+   * @throws {Error} If initialization fails.
    */
-  initialize() {
+  async initialize() {
+    await this.loadGeo();
+    this.isInitialized = true;
+    console.log("PH-Geo: API is ready to use");
+  }
+
+  /**
+   * Ensures that the geographic data is loaded before further operations.
+   * @returns {Promise<void>}
+   */
+  async ensureDataLoaded() {
     if (!this.isInitialized) {
-      this.initPromise = this.loadGeo()
-        .then(() => {
-          this.isInitialized = true;
-          console.log("PH-Geo: API is ready to use");
-          console.log("PH-Geo: Initialized successfully");
-        })
-        .catch((error) => {
-          throw new Error(
-            `PH-Geo: error - Initialization failed: ${error.message}`
-          );
-        });
+      console.log("PH-Geo: Waiting for data to be loaded...");
+      await this._initPromise;
     }
-    return this.initPromise;
+  }
+
+  /**
+   * Helper method to validate existence of a region.
+   * @param {string} region The region name.
+   * @returns {Object} The region data.
+   * @throws {Error} If region does not exist.
+   */
+  _getRegion(region) {
+    const regionData = this.data?.regions?.[region];
+    if (!regionData) {
+      throw new Error(`Region "${region}" not found`);
+    }
+    return regionData;
+  }
+
+  /**
+   * Helper method to validate existence of a province in a given region.
+   * @param {string} region The region name.
+   * @param {string} province The province name.
+   * @returns {Object} The province data.
+   * @throws {Error} If province does not exist in the region.
+   */
+  _getProvince(region, province) {
+    const regionData = this._getRegion(region);
+    const provinceData = regionData.provinces?.[province];
+    if (!provinceData) {
+      throw new Error(`Province "${province}" not found in region "${region}"`);
+    }
+    return provinceData;
+  }
+
+  /**
+   * Helper method to validate existence of a city in a given province and region.
+   * @param {string} region The region name.
+   * @param {string} province The province name.
+   * @param {string} city The city name.
+   * @returns {Object} The city data.
+   * @throws {Error} If city does not exist in the province.
+   */
+  _getCity(region, province, city) {
+    const provinceData = this._getProvince(region, province);
+    const cityData = provinceData.cities?.[city];
+    if (!cityData) {
+      throw new Error(
+        `City "${city}" not found in province "${province}" of region "${region}"`
+      );
+    }
+    return cityData;
   }
 
   /**
    * Returns all regions.
-   * @returns {Object} An object containing all regions.
-   * @throws {Error} If the data is not loaded yet.
+   * @returns {Promise<string[]>} An array of region names.
    */
-  getRegions() {
-    this.ensureDataLoaded();
+  async getRegions() {
+    await this.ensureDataLoaded();
     return Object.keys(this.data.regions);
   }
 
   /**
    * Returns all provinces in a specific region.
-   * @param {string} region - The name of the region.
-   * @returns {Object} An object containing all provinces in the region.
-   * @throws {Error} If the data is not loaded yet or the region does not exist.
+   * @param {string} region The region name.
+   * @returns {Promise<string[]>} An array of province names.
    */
-  getProvincesByRegion(region) {
-    this.ensureDataLoaded();
-    if (!this.data.regions[region]) {
-      throw new Error(`PH-Geo: error - Region "${region}" not found`);
-    }
-    return Object.keys(this.data.regions[region].provinces);
+  async getProvincesByRegion(region) {
+    await this.ensureDataLoaded();
+    const regionData = this._getRegion(region);
+    return Object.keys(regionData.provinces);
   }
 
   /**
-   * Returns all cities in a specific province.
-   * @param {string} region - The name of the region.
-   * @param {string} province - The name of the province.
-   * @returns {Object} An object containing all cities in the province.
-   * @throws {Error} If the data is not loaded yet or the region/province does not exist.
+   * Returns all cities in a specific province within a region.
+   * @param {string} region The region name.
+   * @param {string} province The province name.
+   * @returns {Promise<string[]>} An array of city names.
    */
-  getCitiesByProvince(region, province) {
-    this.ensureDataLoaded();
-    if (!this.data.regions[region]) {
-      throw new Error(`PH-Geo: error - Region "${region}" not found`);
-    }
-    if (!this.data.regions[region].provinces[province]) {
-      throw new Error(
-        `PH-Geo: error - Province "${province}" not found in region "${region}"`
-      );
-    }
-    return Object.keys(this.data.regions[region].provinces[province].cities);
+  async getCitiesByProvince(region, province) {
+    await this.ensureDataLoaded();
+    const provinceData = this._getProvince(region, province);
+    return Object.keys(provinceData.cities);
   }
 
   /**
    * Returns all barangays in a specific city.
-   * @param {string} region - The name of the region.
-   * @param {string} province - The name of the province.
-   * @param {string} city - The name of the city.
-   * @returns {Array} An array containing all barangays in the city.
-   * @throws {Error} If the data is not loaded yet or the region/province/city does not exist.
+   * @param {string} region The region name.
+   * @param {string} province The province name.
+   * @param {string} city The city name.
+   * @returns {Promise<Array>} An array of barangay names.
    */
-  getBarangaysByCity(region, province, city) {
-    this.ensureDataLoaded();
-    if (!this.data.regions[region]) {
-      throw new Error(`PH-Geo: error - Region "${region}" not found`);
-    }
-    if (!this.data.regions[region].provinces[province]) {
-      throw new Error(
-        `PH-Geo: error - Province "${province}" not found in region "${region}"`
-      );
-    }
-    if (!this.data.regions[region].provinces[province].cities[city]) {
-      throw new Error(
-        `PH-Geo: error - City "${city}" not found in province "${province}"`
-      );
-    }
-    return this.data.regions[region].provinces[province].cities[city].barangays;
-  }
-
-  /**
-   * Ensures the geographic data is loaded before performing any operations.
-   * @throws {Error} If the data is not loaded yet.
-   */
-  ensureDataLoaded() {
-    if (!this.data) {
-      throw new Error(
-        "PH-Geo: error - Data not loaded. Ensure initialization is complete."
-      );
-    }
+  async getBarangaysByCity(region, province, city) {
+    await this.ensureDataLoaded();
+    const cityData = this._getCity(region, province, city);
+    return cityData.barangays;
   }
 }
 
 const PHGeo = new PHGeolocation();
+
+// Version: 2.0.0

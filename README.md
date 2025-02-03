@@ -6,10 +6,10 @@ The PH Geolocation is an API that provides geolocation data for locations within
 
 ### Available Functions
 
-- `getRegions()`: Returns all regions.
-- `getProvincesByRegion(region)`: Returns all provinces in that region.
-- `getCitiesByProvince(region, province)`: Returns all cities in that specific region and province.
-- `getBaranggaysByCity(region, province, city)`: Returns all barangays in that specific region, province, and city.
+- `async getRegions()`: Returns {Promise<string[]>} all regions .
+- `async getProvincesByRegion(region)`: Returns {Promise<string[]>} all provinces in that region.
+- `async getCitiesByProvince(region, province)`: Returns {Promise<string[]>} all cities in that specific region and province.
+- `async getBaranggaysByCity(region, province, city)`: Returns {Promise<Array>} all barangays in that specific region, province, and city.
 
 ## How to use? (USING a CDN)
 
@@ -32,26 +32,30 @@ Here, add directly in your HTML using a `<script>` tag:
     <script>
       // Example usage
 
-      const regions = PHGeo.getRegions();
-      console.log(regions);
+      PHGeo.getRegions().then((regions) => {
+        console.log(regions);
+      });
 
-      const provinces = PHGeo.getProvincesByRegion(
-        "National Capital Region (NCR)"
+      PHGeo.getProvincesByRegion("National Capital Region (NCR)").then(
+        (provinces) => {
+          console.log(provinces);
+        }
       );
-      console.log(provinces);
 
-      const cities = PHGeo.getCitiesByProvince(
+      PHGeo.getCitiesByProvince(
         "National Capital Region (NCR)",
         "Metro Manila"
-      );
-      console.log(cities);
+      ).then((cities) => {
+        console.log(cities);
+      });
 
       const barangays = PHGeo.getBaranggaysByCity(
         "Region I (Ilocos Region)",
         "Ilocos Norte",
         "Adams"
-      );
-      console.log(barangays);
+      ).then((barangays) => {
+        console.log(barangays);
+      });
     </script>
   </body>
 </html>
