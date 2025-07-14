@@ -16,7 +16,7 @@ The PH Geolocation is an API that provides geolocation data for locations within
 Here, add directly in your HTML using a `<script>` tag:
 
 ```html
-<script src="https://cdn.jsdelivr.net/gh/Zaenalos/PH-Geolocation@refs/heads/main/phGeo.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/Zaenalos/PH-Geolocation@refs/heads/main/ph-geo.js"></script>
 ```
 
 ```html
